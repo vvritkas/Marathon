@@ -137,3 +137,40 @@ jobs:
           #head: # optional
           # Extra args to be passed to the trufflehog CLI
           extra_args: --exclude-paths=.truffleignore --no-verification
+
+
+
+
+  # ======================================================
+
+
+  semgrep-scan:
+    name: Semgrep Scans
+    runs-on: ubuntu-latest
+    container:
+      # Official Docker image with Semgrep installed
+      image: returntocorp/semgrep@sha256:8f85dbfb5d38592d0b916caac855cf18facba40674988caf763d52b9fe916694
+    permissions:
+      # required for all workflows
+      security-events: write
+      # only required for workflows in private repositories
+      actions: read
+      contents: read
+
+
+    steps:
+
+      - name: Checkout Sources
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Run Semgrep using selected rules (metrics off)
+        run: |
+          semgrep scan --sarif --config auto . --output /tmp/semgrep-results.sarif || true
+
+      - name: Upload Semgrep SARIF Results
+        uses: actions/upload-artifact@v4
+        with: # Yep, you can open this file in your IDE: Just drag and drop it into IntelliJ IDEA or Visual Studio Code
+          name: semgrep-scan-results.sarif
+          path: /tmp/semgrep-results.sarif
